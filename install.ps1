@@ -158,7 +158,8 @@ function Copy-BaseGameSaves {
         [AllowEmptyCollection()]
         [System.IO.FileInfo[]] $SaveFiles,
         [Parameter(Mandatory = $true)]
-        [string] $SaveFileName
+        [string] $SaveFileName,
+        [switch] $Force
     )
 
     if ($saveFiles.Count -eq 0) {
@@ -171,13 +172,13 @@ function Copy-BaseGameSaves {
     Write-Host "Copying $($SaveFiles.Count) base-game save file(s)..."
     foreach ($saveFile in $SaveFiles) {
         $destination = Join-Path $saveFile.DirectoryName "$($saveFile.BaseName).$SaveFileName"
-        if (Test-Path -LiteralPath $destination) {
+        if ((Test-Path -LiteralPath $destination) -and -not $Force) {
             Write-Host "Keeping existing save copy: $destination" -ForegroundColor Yellow
             $skippedCount++
             continue
         }
 
-        Copy-Item -LiteralPath $saveFile.FullName -Destination $destination -ErrorAction Stop
+        Copy-Item -LiteralPath $saveFile.FullName -Destination $destination -Force:$Force -ErrorAction Stop
         $copiedCount++
     }
 
@@ -432,6 +433,7 @@ try {
         $baseSaveDirectory = Join-Path $env:APPDATA 'EldenRing'
         try {
             $baseGameSaveFiles = @()
+            $conflictingSaveFiles = @()
             if (Test-Path -LiteralPath $baseSaveDirectory -PathType Container) {
                 $allBaseGameSaveFiles = @(
                     Get-ChildItem `
@@ -444,11 +446,25 @@ try {
                 foreach ($saveFile in $allBaseGameSaveFiles) {
                     $destination = Join-Path $saveFile.DirectoryName "$($saveFile.BaseName).$saveName"
                     if (Test-Path -LiteralPath $destination) {
-                        Write-Host "Warning: existing save file will not be overwritten: $($saveFile.BaseName).$saveName" -ForegroundColor Yellow
+                        Write-Host "Warning: overwriting $($saveFile.BaseName).$saveName will replace its existing Seamless Co-op save." -ForegroundColor Yellow
+                        $conflictingSaveFiles += $saveFile
                     }
                     else {
                         $baseGameSaveFiles += $saveFile
                     }
+                }
+            }
+
+            $forceSaveCopy = $false
+            if ($conflictingSaveFiles.Count -gt 0) {
+                Write-Host 'Forcing a copy replaces the existing Seamless Co-op save with the base-game save.' -ForegroundColor Yellow
+                $forceCopyConfirmation = Select-MenuOption `
+                    -Prompt "Overwrite $($conflictingSaveFiles.Count) existing Seamless Co-op save file(s)?" `
+                    -Options @('Yes, force copy', 'No, keep existing [default]') `
+                    -DefaultIndex 1
+                if ($forceCopyConfirmation -eq 0) {
+                    $forceSaveCopy = $true
+                    $baseGameSaveFiles += $conflictingSaveFiles
                 }
             }
 
@@ -459,7 +475,10 @@ try {
                 -Options @('Yes [default]', 'No') `
                 -DefaultIndex 0
             if ($copySavesConfirmation -eq 0) {
-                Copy-BaseGameSaves -SaveFiles $baseGameSaveFiles -SaveFileName $saveName
+                Copy-BaseGameSaves `
+                    -SaveFiles $baseGameSaveFiles `
+                    -SaveFileName $saveName `
+                    -Force:$forceSaveCopy
             }
         }
         catch {
