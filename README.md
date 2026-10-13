@@ -15,6 +15,8 @@ checks the ZIP size and SHA-256 digest published by GitHub, validates the archiv
 required files, then extracts the mod beside `eldenring.exe`. Existing mod files are backed up
 under `%LOCALAPPDATA%\EldenRingSeamlessCoop\backups`. The installer prompts for a co-op password
 and save filename, defaulting each to `crab`, while retaining every other existing setting. It then
-offers to start the launcher.
+offers to copy base-game `.sl2` saves from `%APPDATA%\EldenRing` to `.sl2.<savefilename>` copies
+before optionally starting the launcher. Original `.sl2` saves are never changed or deleted, and
+existing destination copies are left untouched.
 
 The script should be reviewed before running because `irm ... | iex` executes remote code.

@@ -152,6 +152,45 @@ function Set-SeamlessCoopSetting {
     )
 }
 
+function Copy-BaseGameSaves {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $SourceDirectory,
+        [Parameter(Mandatory = $true)]
+        [string] $SaveFileName
+    )
+
+    if (-not (Test-Path -LiteralPath $SourceDirectory -PathType Container)) {
+        Write-Host "No base-game save directory found at: $SourceDirectory"
+        return
+    }
+
+    $saveFiles = @(
+        Get-ChildItem -LiteralPath $SourceDirectory -Filter '*.sl2' -File -Recurse -ErrorAction Stop
+    )
+    if ($saveFiles.Count -eq 0) {
+        Write-Host "No base-game .sl2 save files found under: $SourceDirectory"
+        return
+    }
+
+    $copiedCount = 0
+    $skippedCount = 0
+    foreach ($saveFile in $saveFiles) {
+        $destination = "$($saveFile.FullName).$SaveFileName"
+        if (Test-Path -LiteralPath $destination) {
+            Write-Host "Keeping existing save copy: $destination" -ForegroundColor Yellow
+            $skippedCount++
+            continue
+        }
+
+        Copy-Item -LiteralPath $saveFile.FullName -Destination $destination -ErrorAction Stop
+        $copiedCount++
+    }
+
+    Write-Host "Copied $copiedCount base-game save(s); skipped $skippedCount existing copy/copies."
+    Write-Host 'Original .sl2 save files were not changed or deleted.'
+}
+
 function Select-MenuOption {
     param(
         [Parameter(Mandatory = $true)]
@@ -286,6 +325,9 @@ try {
     if ([string]::IsNullOrEmpty($saveName)) {
         $saveName = 'crab'
     }
+    if ($saveName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
+        throw 'Save filename contains characters that are invalid in a Windows filename.'
+    }
     Write-Host ''
     $confirmation = Select-MenuOption `
         -Prompt 'Continue with installation?' `
@@ -392,6 +434,21 @@ try {
         Write-Host "Co-op password and save file extension are set to '$coopPassword' and '$saveName'."
         Write-Host "Start modded sessions with: $launcherPath"
         Write-Host 'Keep the game and mod versions aligned with the other players in your party.'
+
+        Write-Host ''
+        $copySavesConfirmation = Select-MenuOption `
+            -Prompt "Copy base-game saves to .sl2.$saveName files?" `
+            -Options @('Yes [default]', 'No') `
+            -DefaultIndex 0
+        if ($copySavesConfirmation -eq 0) {
+            $baseSaveDirectory = Join-Path $env:APPDATA 'EldenRing'
+            try {
+                Copy-BaseGameSaves -SourceDirectory $baseSaveDirectory -SaveFileName $saveName
+            }
+            catch {
+                Write-Host "Installation succeeded, but base-game saves could not be copied: $($_.Exception.Message)" -ForegroundColor Red
+            }
+        }
 
         Write-Host ''
         $launchConfirmation = Select-MenuOption `
