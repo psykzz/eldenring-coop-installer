@@ -138,6 +138,48 @@ function Set-SeamlessCoopSetting {
     )
 }
 
+function Select-MenuOption {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Prompt,
+        [Parameter(Mandatory = $true)]
+        [string[]] $Options,
+        [int] $DefaultIndex = 0
+    )
+
+    if ($DefaultIndex -lt 0 -or $DefaultIndex -ge $Options.Count) {
+        throw 'The default menu option is out of range.'
+    }
+
+    Write-Host $Prompt
+    Write-Host 'Use the Up/Down arrow keys and press Enter.'
+    $menuTop = [Console]::CursorTop
+    $selectedIndex = $DefaultIndex
+
+    while ($true) {
+        for ($index = 0; $index -lt $Options.Count; $index++) {
+            [Console]::SetCursorPosition(0, $menuTop + $index)
+            [Console]::Write((' ' * ([Console]::BufferWidth - 1)))
+            [Console]::SetCursorPosition(0, $menuTop + $index)
+            $marker = if ($index -eq $selectedIndex) { '>' } else { ' ' }
+            [Console]::Write("$marker $($Options[$index])")
+        }
+
+        $key = [Console]::ReadKey($true)
+        if ($key.Key -eq [ConsoleKey]::UpArrow) {
+            $selectedIndex = ($selectedIndex + $Options.Count - 1) % $Options.Count
+        }
+        elseif ($key.Key -eq [ConsoleKey]::DownArrow) {
+            $selectedIndex = ($selectedIndex + 1) % $Options.Count
+        }
+        elseif ($key.Key -eq [ConsoleKey]::Enter) {
+            [Console]::SetCursorPosition(0, $menuTop + $Options.Count)
+            [Console]::WriteLine('')
+            return $selectedIndex
+        }
+    }
+}
+
 try {
     $specifiedVersion = [version]'2.0.1'
     $specifiedTag = "v$specifiedVersion"
@@ -153,19 +195,18 @@ try {
 
     if ($latestVersion -gt $specifiedVersion) {
         Write-Host "A newer release is available: $($latestRelease.tag_name)"
-        $releaseChoice = Read-Host 'Use specified (2.0.1) or use latest? [specified/latest]'
-        if ([string]::IsNullOrWhiteSpace($releaseChoice) -or
-            $releaseChoice -match '^(specified|use specified(?: \(2\.0\.1\))?)$') {
+        $releaseChoice = Select-MenuOption `
+            -Prompt 'Select a Seamless Co-op release:' `
+            -Options @("Use specified ($specifiedVersion) [default]", 'Use latest') `
+            -DefaultIndex 0
+        if ($releaseChoice -eq 0) {
             $release = Invoke-RestMethod `
                 -Uri "https://api.github.com/repos/yuiamoroll/EldenRingSeamlessCoopRelease/releases/tags/$specifiedTag" `
                 -Headers $headers `
                 -Method Get
         }
-        elseif ($releaseChoice -match '^(latest|use latest)$') {
-            $release = $latestRelease
-        }
         else {
-            throw "Invalid release choice '$releaseChoice'. Enter 'specified' or 'latest'."
+            $release = $latestRelease
         }
     }
     elseif ($latestVersion -eq $specifiedVersion) {
@@ -198,7 +239,8 @@ try {
     }
 
     Write-Host ''
-    Write-Host "Selected release: $($release.tag_name)"
+    $latestSuffix = if ($release.tag_name -eq $latestRelease.tag_name) { ' (latest)' } else { '' }
+    Write-Host "Selected release: $($release.tag_name)$latestSuffix"
     Write-Host "Game folder:    $gameDirectory"
     Write-Host 'The installer will back up existing Seamless Co-op files and preserve your settings.'
     Write-Host ''
@@ -206,7 +248,7 @@ try {
     if ([string]::IsNullOrEmpty($coopPassword)) {
         $coopPassword = 'crab'
     }
-    $saveName = Read-Host 'Save name [crab]'
+    $saveName = Read-Host 'Save filename [crab]'
     if ([string]::IsNullOrEmpty($saveName)) {
         $saveName = 'crab'
     }
