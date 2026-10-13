@@ -1,5 +1,16 @@
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+Clear-Host
+Write-Host @'
+ d88888b db      d8888b. d88888b d8b   db       .o88b. d8888b.  .d8b.  d8888b.
+ 88'     88      88  `8D 88'     888o  88      d8P  Y8 88  `8D d8' `8b 88  `8D
+ 88ooooo 88      88   88 88ooooo 88V8o 88      8P      88oobY' 88ooo88 88oooY'
+ 88~~~~~ 88      88   88 88~~~~~ 88 V8o88      8b      88`8b   88~~~88 88~~~b.
+ 88.     88booo. 88  .8D 88.     88  V888      Y8b  d8 88 `88. 88   88 88   8D
+ Y88888P Y88888P Y8888D' Y88888P VP   V8P       `Y88P' 88   YD YP   YP Y8888P'
+
+                  SEAMLESS CO-OP INSTALLER
+'@ -ForegroundColor Cyan
 
 function Normalize-DriveLetter {
     param(
@@ -253,8 +264,11 @@ try {
         $saveName = 'crab'
     }
     Write-Host ''
-    $confirmation = Read-Host 'Continue? [y/N]'
-    if ($confirmation -notmatch '^(y|yes)$') {
+    $confirmation = Select-MenuOption `
+        -Prompt 'Continue with installation?' `
+        -Options @('Yes [default]', 'No') `
+        -DefaultIndex 0
+    if ($confirmation -ne 0) {
         Write-Host 'Installation cancelled.'
         return
     }
@@ -357,8 +371,11 @@ try {
         Write-Host 'Keep the game and mod versions aligned with the other players in your party.'
 
         Write-Host ''
-        $launchConfirmation = Read-Host 'Launch Seamless Co-op now? [y/N]'
-        if ($launchConfirmation -match '^(y|yes)$') {
+        $launchConfirmation = Select-MenuOption `
+            -Prompt 'Start Seamless Co-op now?' `
+            -Options @('Yes [default]', 'No') `
+            -DefaultIndex 0
+        if ($launchConfirmation -eq 0) {
             try {
                 Start-Process -FilePath $launcherPath -WorkingDirectory $gameDirectory -ErrorAction Stop
                 Write-Host 'Seamless Co-op launcher started.'
