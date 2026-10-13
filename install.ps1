@@ -168,8 +168,9 @@ function Copy-BaseGameSaves {
 
     $copiedCount = 0
     $skippedCount = 0
-    foreach ($saveFile in $saveFiles) {
-        $destination = "$($saveFile.FullName).$SaveFileName"
+    Write-Host "Copying $($SaveFiles.Count) base-game save file(s)..."
+    foreach ($saveFile in $SaveFiles) {
+        $destination = Join-Path $saveFile.DirectoryName "$($saveFile.BaseName).$SaveFileName"
         if (Test-Path -LiteralPath $destination) {
             Write-Host "Keeping existing save copy: $destination" -ForegroundColor Yellow
             $skippedCount++
@@ -180,8 +181,8 @@ function Copy-BaseGameSaves {
         $copiedCount++
     }
 
-    Write-Host "Copied $copiedCount base-game save(s); skipped $skippedCount existing copy/copies."
-    Write-Host 'Original .sl2 save files were not changed or deleted.'
+    Write-Host "Finished copying $copiedCount base-game save file(s); skipped $skippedCount existing copy/copies."
+    Write-Host 'Each .sl2 file contains all character slots. Original save files were not changed or deleted.'
 }
 
 function Select-MenuOption {
@@ -425,7 +426,6 @@ try {
         Write-Host ''
         Write-Host "Seamless Co-op $($release.tag_name) installed successfully."
         Write-Host "Co-op password and save file extension are set to '$coopPassword' and '$saveName'."
-        Write-Host "Start modded sessions with: $launcherPath"
         Write-Host 'Keep the game and mod versions aligned with the other players in your party.'
 
         Write-Host ''
@@ -447,8 +447,9 @@ try {
             }
 
             $copyCount = $baseGameSaveFiles.Count
+            $saveFileLabel = if ($copyCount -eq 1) { 'save file' } else { 'save files' }
             $copySavesConfirmation = Select-MenuOption `
-                -Prompt "Copy $copyCount base-game save(s) to .sl2.$saveName files?" `
+                -Prompt "Copy $copyCount base-game $saveFileLabel to .$saveName files? Each file includes all character slots." `
                 -Options @('Yes [default]', 'No') `
                 -DefaultIndex 0
             if ($copySavesConfirmation -eq 0) {
@@ -457,6 +458,36 @@ try {
         }
         catch {
             Write-Host "Installation succeeded, but base-game saves could not be listed or copied: $($_.Exception.Message)" -ForegroundColor Red
+        }
+
+        $desktopDirectory = [Environment]::GetFolderPath(
+            [Environment+SpecialFolder]::DesktopDirectory
+        )
+        $desktopShortcutPath = Join-Path $desktopDirectory 'Seamless Co-op.lnk'
+        if (-not (Test-Path -LiteralPath $desktopShortcutPath -PathType Leaf)) {
+            Write-Host ''
+            $createShortcutConfirmation = Select-MenuOption `
+                -Prompt 'Create a Seamless Co-op desktop shortcut?' `
+                -Options @('Yes [default]', 'No') `
+                -DefaultIndex 0
+            if ($createShortcutConfirmation -eq 0) {
+                try {
+                    $shell = New-Object -ComObject WScript.Shell
+                    $shortcut = $shell.CreateShortcut($desktopShortcutPath)
+                    $shortcut.TargetPath = $launcherPath
+                    $shortcut.WorkingDirectory = $gameDirectory
+                    $shortcut.IconLocation = "$launcherPath,0"
+                    $shortcut.Description = 'Launch Elden Ring Seamless Co-op'
+                    $shortcut.Save()
+                    Write-Host "Desktop shortcut created: $desktopShortcutPath"
+                }
+                catch {
+                    Write-Host "Installation succeeded, but the desktop shortcut could not be created: $($_.Exception.Message)" -ForegroundColor Red
+                }
+            }
+        }
+        else {
+            Write-Host 'A Seamless Co-op desktop shortcut already exists.'
         }
 
         Write-Host ''
