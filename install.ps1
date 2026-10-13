@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 Clear-Host
+$Host.UI.RawUI.WindowTitle = "Seamless Co-op Installer - updated $(Get-Date -Format 'yyyy/MM/dd HH:mm')"
 Write-Host @'
  d88888b db      d8888b. d88888b d8b   db       .o88b. d8888b.  .d8b.  d8888b.
  88'     88      88  `8D 88'     888o  88      d8P  Y8 88  `8D d8' `8b 88  `8D
