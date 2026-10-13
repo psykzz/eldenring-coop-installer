@@ -8,7 +8,7 @@ irm https://psykzz.github.io/eldenring-coop-installer/install.ps1 | iex
 ```
 
 The script defaults to Seamless Co-op 2.0.1. If a newer release is available, it offers an
-arrow-key menu to use 2.0.1 or the latest release, defaulting to 2.0.1. It downloads the selected
+left/right-arrow menu to use 2.0.1 or the latest release, defaulting to 2.0.1. It downloads the selected
 release from
 [`yuiamoroll/EldenRingSeamlessCoopRelease`](https://github.com/yuiamoroll/EldenRingSeamlessCoopRelease/releases),
 checks the ZIP size and SHA-256 digest published by GitHub, validates the archive paths and

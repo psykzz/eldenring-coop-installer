@@ -12,6 +12,7 @@ Write-Host @'
 
                   SEAMLESS CO-OP INSTALLER
 '@ -ForegroundColor Cyan
+Write-Host "                      Updated $(Get-Date -Format 'yyyy/MM/dd HH:mm')" -ForegroundColor DarkGray
 
 function Normalize-DriveLetter {
     param(
@@ -164,7 +165,7 @@ function Select-MenuOption {
     }
 
     Write-Host $Prompt
-    Write-Host 'Use the Up/Down arrow keys and press Enter.'
+    Write-Host 'Use the Left/Right arrow keys and press Enter.'
     $menuTop = [Console]::CursorTop
     $selectedIndex = $DefaultIndex
     $originalCursorVisible = [Console]::CursorVisible
@@ -195,10 +196,10 @@ function Select-MenuOption {
                 [Console]::WriteLine('')
                 throw
             }
-            if ($key.Key -eq [ConsoleKey]::UpArrow) {
+            if ($key.Key -eq [ConsoleKey]::LeftArrow) {
                 $selectedIndex = ($selectedIndex + $Options.Count - 1) % $Options.Count
             }
-            elseif ($key.Key -eq [ConsoleKey]::DownArrow) {
+            elseif ($key.Key -eq [ConsoleKey]::RightArrow) {
                 $selectedIndex = ($selectedIndex + 1) % $Options.Count
             }
             elseif ($key.Key -eq [ConsoleKey]::Enter) {
