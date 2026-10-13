@@ -184,7 +184,14 @@ function Select-MenuOption {
         }
 
         [Console]::SetCursorPosition(0, $menuTop + $Options.Count)
-        $key = [Console]::ReadKey($true)
+        try {
+            $key = [Console]::ReadKey($true)
+        }
+        catch [System.Management.Automation.PipelineStoppedException] {
+            [Console]::SetCursorPosition(0, $menuTop + $Options.Count)
+            [Console]::WriteLine('')
+            throw
+        }
         if ($key.Key -eq [ConsoleKey]::UpArrow) {
             $selectedIndex = ($selectedIndex + $Options.Count - 1) % $Options.Count
         }
