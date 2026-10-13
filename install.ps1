@@ -79,6 +79,7 @@ function Get-GameDirectory {
             Write-Host "  [$($index + 1)] $($candidates[$index])"
         }
 
+        Write-Host ''
         $selection = Read-Host "Choose an installation (1-$($candidates.Count))"
         $selectedIndex = 0
         if (-not [int]::TryParse($selection, [ref]$selectedIndex) -or
@@ -91,6 +92,7 @@ function Get-GameDirectory {
 
     Write-Host 'Could not find the game automatically.'
     Write-Host 'Enter the Game folder containing eldenring.exe, or its parent ELDEN RING folder.'
+    Write-Host ''
     $providedPath = Read-Host 'Game folder'
     if (-not (Test-Path -LiteralPath $providedPath -PathType Container)) {
         throw "Folder not found: $providedPath"
@@ -165,6 +167,7 @@ try {
     Write-Host "Latest release: $($release.tag_name)"
     Write-Host "Game folder:    $gameDirectory"
     Write-Host 'The installer will back up existing Seamless Co-op files and preserve your settings.'
+    Write-Host ''
     $confirmation = Read-Host 'Continue? [y/N]'
     if ($confirmation -notmatch '^(y|yes)$') {
         Write-Host 'Installation cancelled.'
@@ -268,6 +271,7 @@ try {
         Write-Host "Start modded sessions with: $launcherPath"
         Write-Host 'Keep the game and mod versions aligned with the other players in your party.'
 
+        Write-Host ''
         $launchConfirmation = Read-Host 'Launch Seamless Co-op now? [y/N]'
         if ($launchConfirmation -match '^(y|yes)$') {
             try {
