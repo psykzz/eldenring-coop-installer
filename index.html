@@ -11,23 +11,47 @@
     code { padding: .2rem .4rem; border-radius: .25rem; background: #292823; overflow-wrap: anywhere; }
     pre { padding: 1rem; overflow-x: auto; border: 1px solid #484333; border-radius: .4rem; background: #22211e; }
     a { color: #d7bd83; }
-    .warning { padding: .8rem 1rem; border-left: 3px solid #d7bd83; background: #22211e; }
   </style>
 </head>
 <body>
-  <h1>Elden Ring Seamless Co-op Installer</h1>
-  <p>Run this command in PowerShell to download and start the interactive installer:</p>
-  <pre><code>irm https://psykzz.github.io/eldenring-coop-installer/install.ps1 | iex</code></pre>
-  <p class="warning">This downloads and executes a script from this site. Review the script at
-    <a href="install.ps1">install.ps1</a> before running it if you want to inspect what it does.
-    It defaults to Seamless Co-op 2.0.1 and offers a left/right-arrow choice if a newer release is
-    available. See the
-    <a href="https://github.com/yuiamoroll/EldenRingSeamlessCoopRelease/releases">GitHub release page</a>.
-    It checks the archive against GitHub's SHA-256 metadata and asks before installing.</p>
-  <p>The installer finds your Steam game folder, backs up an existing mod installation, and keeps
-    your current Seamless Co-op settings. The co-op password and save filename default to
-    <code>crab</code> and can be changed during installation. Before launch, it can copy base-game
-    saves to Seamless Co-op save files without changing or deleting the originals. Start modded sessions with <code>ersc_launcher.exe</code>,
-    not the normal game launcher. Match the mod version and co-op password with your party.</p>
+  <main>
+    <h1>Play Elden Ring Seamless Co-op</h1>
+    <p>Use the installer to set up the mod, then join your friends with matching settings.</p>
+
+    <h2>Get started</h2>
+    <ol>
+      <li>Open PowerShell and run:
+        <pre><code>irm https://psykzz.github.io/eldenring-coop-installer/install.ps1 | iex</code></pre>
+      </li>
+      <li>Follow the prompts to choose your release and install location.</li>
+      <li>Choose a co-op password and save filename. The default for both is <code>crab</code>.</li>
+      <li>Optionally copy your base-game saves, then start Seamless Co-op.</li>
+    </ol>
+    <p>To play together, everyone should use the same Seamless Co-op version and co-op password.
+      Launch the modded game through Seamless Co-op, not the regular Elden Ring launcher.</p>
+
+    <h2>Frequently asked questions</h2>
+    <details name="faq">
+      <summary>Can I keep my existing characters?</summary>
+      <p>Yes. You can choose to copy your base-game save into a separate Seamless Co-op save.
+        Your original save is left untouched. Each save file contains all of your character slots.</p>
+    </details>
+    <details name="faq">
+      <summary>What should I use for the password and save filename?</summary>
+      <p>Use the same co-op password as your friends. You can keep the default <code>crab</code>
+        or choose another password and save filename during setup.</p>
+    </details>
+    <details name="faq">
+      <summary>Which mod version should we choose?</summary>
+      <p>Choose the same version as the other players in your group. The installer defaults to
+        version 2.0.1 and lets you select a newer release if one is available. Check the
+        <a href="https://github.com/yuiamoroll/EldenRingSeamlessCoopRelease/releases">release page</a>
+        if you need to compare versions.</p>
+    </details>
+    <details name="faq">
+      <summary>Where can I review the installer?</summary>
+      <p>You can read the <a href="install.ps1">PowerShell installer script</a> before running it.</p>
+    </details>
+  </main>
 </body>
 </html>
