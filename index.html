@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elden Ring Seamless Co-op Installer</title>
+  <style>
+    :root { color-scheme: dark; font: 16px/1.6 system-ui, sans-serif; }
+    body { max-width: 720px; margin: 10vh auto; padding: 0 1.25rem; color: #e7e1d5; background: #171715; }
+    h1 { line-height: 1.2; color: #d7bd83; }
+    code { padding: .2rem .4rem; border-radius: .25rem; background: #292823; overflow-wrap: anywhere; }
+    pre { padding: 1rem; overflow-x: auto; border: 1px solid #484333; border-radius: .4rem; background: #22211e; }
+    a { color: #d7bd83; }
+    .warning { padding: .8rem 1rem; border-left: 3px solid #d7bd83; background: #22211e; }
+  </style>
+</head>
+<body>
+  <h1>Elden Ring Seamless Co-op Installer</h1>
+  <p>Run this command in PowerShell to download and start the interactive installer:</p>
+  <pre><code>irm https://psykzz.github.io/eldenring-coop-installer/install.ps1 | iex</code></pre>
+  <p class="warning">This downloads and executes a script from this site. Review the script at
+    <a href="install.ps1">install.ps1</a> before running it if you want to inspect what it does.
+    It downloads the latest release from the
+    <a href="https://github.com/yuiamoroll/EldenRingSeamlessCoopRelease/releases">GitHub release page</a>,
+    checks the archive against GitHub's SHA-256 metadata, and asks before installing.</p>
+  <p>The installer finds your Steam game folder, backs up an existing mod installation, and keeps
+    your current Seamless Co-op settings. Start modded sessions with <code>ersc_launcher.exe</code>,
+    not the normal game launcher. Match the mod version and co-op password with your party.</p>
+</body>
+</html>
