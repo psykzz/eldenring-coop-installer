@@ -172,10 +172,18 @@ function Select-MenuOption {
             [Console]::SetCursorPosition(0, $menuTop + $index)
             [Console]::Write((' ' * ([Console]::BufferWidth - 1)))
             [Console]::SetCursorPosition(0, $menuTop + $index)
-            $marker = if ($index -eq $selectedIndex) { '>' } else { ' ' }
-            [Console]::Write("$marker $($Options[$index])")
+            if ($index -eq $selectedIndex) {
+                [Console]::BackgroundColor = [ConsoleColor]::DarkCyan
+                [Console]::ForegroundColor = [ConsoleColor]::White
+                [Console]::Write("> $($Options[$index])")
+                [Console]::ResetColor()
+            }
+            else {
+                [Console]::Write("  $($Options[$index])")
+            }
         }
 
+        [Console]::SetCursorPosition(0, $menuTop + $Options.Count)
         $key = [Console]::ReadKey($true)
         if ($key.Key -eq [ConsoleKey]::UpArrow) {
             $selectedIndex = ($selectedIndex + $Options.Count - 1) % $Options.Count
