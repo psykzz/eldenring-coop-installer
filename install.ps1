@@ -13,6 +13,7 @@ Write-Host @'
                   SEAMLESS CO-OP INSTALLER
 '@ -ForegroundColor Cyan
 Write-Host "                      Updated $(Get-Date -Format 'yyyy/MM/dd HH:mm')" -ForegroundColor DarkGray
+Write-Host ''
 
 function Normalize-DriveLetter {
     param(
