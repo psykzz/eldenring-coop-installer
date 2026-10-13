@@ -166,43 +166,47 @@ function Select-MenuOption {
     Write-Host 'Use the Up/Down arrow keys and press Enter.'
     $menuTop = [Console]::CursorTop
     $selectedIndex = $DefaultIndex
+    $originalCursorVisible = [Console]::CursorVisible
 
-    while ($true) {
-        for ($index = 0; $index -lt $Options.Count; $index++) {
-            [Console]::SetCursorPosition(0, $menuTop + $index)
-            [Console]::Write((' ' * ([Console]::BufferWidth - 1)))
-            [Console]::SetCursorPosition(0, $menuTop + $index)
-            if ($index -eq $selectedIndex) {
-                [Console]::BackgroundColor = [ConsoleColor]::DarkCyan
-                [Console]::ForegroundColor = [ConsoleColor]::White
-                [Console]::Write("> $($Options[$index])")
-                [Console]::ResetColor()
+    try {
+        [Console]::CursorVisible = $false
+        while ($true) {
+            for ($index = 0; $index -lt $Options.Count; $index++) {
+                [Console]::SetCursorPosition(0, $menuTop + $index)
+                [Console]::Write((' ' * ([Console]::BufferWidth - 1)))
+                [Console]::SetCursorPosition(0, $menuTop + $index)
+                if ($index -eq $selectedIndex) {
+                    [Console]::BackgroundColor = [ConsoleColor]::DarkCyan
+                    [Console]::ForegroundColor = [ConsoleColor]::White
+                    [Console]::Write("> $($Options[$index])")
+                    [Console]::ResetColor()
+                }
+                else {
+                    [Console]::Write("  $($Options[$index])")
+                }
             }
-            else {
-                [Console]::Write("  $($Options[$index])")
-            }
-        }
 
-        [Console]::SetCursorPosition(0, $menuTop + $Options.Count)
-        try {
-            $key = [Console]::ReadKey($true)
+            try {
+                $key = [Console]::ReadKey($true)
+            }
+            catch [System.Management.Automation.PipelineStoppedException] {
+                [Console]::WriteLine('')
+                throw
+            }
+            if ($key.Key -eq [ConsoleKey]::UpArrow) {
+                $selectedIndex = ($selectedIndex + $Options.Count - 1) % $Options.Count
+            }
+            elseif ($key.Key -eq [ConsoleKey]::DownArrow) {
+                $selectedIndex = ($selectedIndex + 1) % $Options.Count
+            }
+            elseif ($key.Key -eq [ConsoleKey]::Enter) {
+                [Console]::WriteLine('')
+                return $selectedIndex
+            }
         }
-        catch [System.Management.Automation.PipelineStoppedException] {
-            [Console]::SetCursorPosition(0, $menuTop + $Options.Count)
-            [Console]::WriteLine('')
-            throw
-        }
-        if ($key.Key -eq [ConsoleKey]::UpArrow) {
-            $selectedIndex = ($selectedIndex + $Options.Count - 1) % $Options.Count
-        }
-        elseif ($key.Key -eq [ConsoleKey]::DownArrow) {
-            $selectedIndex = ($selectedIndex + 1) % $Options.Count
-        }
-        elseif ($key.Key -eq [ConsoleKey]::Enter) {
-            [Console]::SetCursorPosition(0, $menuTop + $Options.Count)
-            [Console]::WriteLine('')
-            return $selectedIndex
-        }
+    }
+    finally {
+        [Console]::CursorVisible = $originalCursorVisible
     }
 }
 
