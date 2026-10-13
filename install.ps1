@@ -129,7 +129,7 @@ function Set-SeamlessCoopSetting {
         throw "Expected exactly one '$Name' setting in '$Path', found $($matches.Count)."
     }
 
-    $replacement = '$1' + $Value + '$2$3'
+    $replacement = '$1' + $Value.Replace('$', '$$') + '$2$3'
     $updatedText = [regex]::Replace($settingsText, $pattern, $replacement, 1)
     [System.IO.File]::WriteAllText(
         $Path,
@@ -139,11 +139,45 @@ function Set-SeamlessCoopSetting {
 }
 
 try {
+    $specifiedVersion = [version]'2.0.1'
+    $specifiedTag = "v$specifiedVersion"
     $releaseApi = 'https://api.github.com/repos/yuiamoroll/EldenRingSeamlessCoopRelease/releases/latest'
     $headers = @{ 'User-Agent' = 'EldenRingSeamlessCoopInstaller' }
 
     Write-Host 'Finding the latest Seamless Co-op release...'
-    $release = Invoke-RestMethod -Uri $releaseApi -Headers $headers -Method Get
+    $latestRelease = Invoke-RestMethod -Uri $releaseApi -Headers $headers -Method Get
+    if ($latestRelease.tag_name -notmatch '^v?(\d+\.\d+\.\d+(?:\.\d+)?)$') {
+        throw "Could not parse latest release version '$($latestRelease.tag_name)'."
+    }
+    $latestVersion = [version]$Matches[1]
+
+    if ($latestVersion -gt $specifiedVersion) {
+        Write-Host "A newer release is available: $($latestRelease.tag_name)"
+        $releaseChoice = Read-Host 'Use specified (2.0.1) or use latest? [specified/latest]'
+        if ([string]::IsNullOrWhiteSpace($releaseChoice) -or
+            $releaseChoice -match '^(specified|use specified(?: \(2\.0\.1\))?)$') {
+            $release = Invoke-RestMethod `
+                -Uri "https://api.github.com/repos/yuiamoroll/EldenRingSeamlessCoopRelease/releases/tags/$specifiedTag" `
+                -Headers $headers `
+                -Method Get
+        }
+        elseif ($releaseChoice -match '^(latest|use latest)$') {
+            $release = $latestRelease
+        }
+        else {
+            throw "Invalid release choice '$releaseChoice'. Enter 'specified' or 'latest'."
+        }
+    }
+    elseif ($latestVersion -eq $specifiedVersion) {
+        $release = $latestRelease
+    }
+    else {
+        $release = Invoke-RestMethod `
+            -Uri "https://api.github.com/repos/yuiamoroll/EldenRingSeamlessCoopRelease/releases/tags/$specifiedTag" `
+            -Headers $headers `
+            -Method Get
+    }
+
     $assets = @($release.assets | Where-Object { $_.name -match '^Seamless\.Co-op\..+\.zip$' })
     if ($assets.Count -ne 1) {
         throw "Expected one Seamless Co-op ZIP in release '$($release.tag_name)', found $($assets.Count)."
@@ -164,9 +198,18 @@ try {
     }
 
     Write-Host ''
-    Write-Host "Latest release: $($release.tag_name)"
+    Write-Host "Selected release: $($release.tag_name)"
     Write-Host "Game folder:    $gameDirectory"
     Write-Host 'The installer will back up existing Seamless Co-op files and preserve your settings.'
+    Write-Host ''
+    $coopPassword = Read-Host 'Co-op password [crab]'
+    if ([string]::IsNullOrEmpty($coopPassword)) {
+        $coopPassword = 'crab'
+    }
+    $saveName = Read-Host 'Save name [crab]'
+    if ([string]::IsNullOrEmpty($saveName)) {
+        $saveName = 'crab'
+    }
     Write-Host ''
     $confirmation = Read-Host 'Continue? [y/N]'
     if ($confirmation -notmatch '^(y|yes)$') {
@@ -262,12 +305,12 @@ try {
             Copy-Item -LiteralPath $settingsBackupPath -Destination $existingSettings -Force
         }
 
-        Set-SeamlessCoopSetting -Path $existingSettings -Name 'cooppassword' -Value 'crab'
-        Set-SeamlessCoopSetting -Path $existingSettings -Name 'save_file_extension' -Value 'crab'
+        Set-SeamlessCoopSetting -Path $existingSettings -Name 'cooppassword' -Value $coopPassword
+        Set-SeamlessCoopSetting -Path $existingSettings -Name 'save_file_extension' -Value $saveName
 
         Write-Host ''
         Write-Host "Seamless Co-op $($release.tag_name) installed successfully."
-        Write-Host 'Co-op password and save file extension are both set to crab.'
+        Write-Host "Co-op password and save file extension are set to '$coopPassword' and '$saveName'."
         Write-Host "Start modded sessions with: $launcherPath"
         Write-Host 'Keep the game and mod versions aligned with the other players in your party.'
 
