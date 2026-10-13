@@ -433,17 +433,23 @@ try {
         try {
             $baseGameSaveFiles = @()
             if (Test-Path -LiteralPath $baseSaveDirectory -PathType Container) {
-                $baseGameSaveFiles = @(
+                $allBaseGameSaveFiles = @(
                     Get-ChildItem `
                         -LiteralPath $baseSaveDirectory `
                         -Filter '*.sl2' `
                         -File `
                         -Recurse `
-                        -ErrorAction Stop |
-                        Where-Object {
-                            -not (Test-Path -LiteralPath "$($_.FullName).$saveName")
-                        }
+                        -ErrorAction Stop
                 )
+                foreach ($saveFile in $allBaseGameSaveFiles) {
+                    $destination = Join-Path $saveFile.DirectoryName "$($saveFile.BaseName).$saveName"
+                    if (Test-Path -LiteralPath $destination) {
+                        Write-Host "Warning: existing save file will not be overwritten: $($saveFile.BaseName).$saveName" -ForegroundColor Yellow
+                    }
+                    else {
+                        $baseGameSaveFiles += $saveFile
+                    }
+                }
             }
 
             $copyCount = $baseGameSaveFiles.Count
