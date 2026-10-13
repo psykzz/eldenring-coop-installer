@@ -172,21 +172,22 @@ function Select-MenuOption {
     try {
         [Console]::CursorVisible = $false
         while ($true) {
+            [Console]::SetCursorPosition(0, $menuTop)
+            [Console]::Write((' ' * ([Console]::BufferWidth - 1)))
+            [Console]::SetCursorPosition(0, $menuTop)
             for ($index = 0; $index -lt $Options.Count; $index++) {
-                [Console]::SetCursorPosition(0, $menuTop + $index)
-                [Console]::Write((' ' * ([Console]::BufferWidth - 1)))
-                [Console]::SetCursorPosition(0, $menuTop + $index)
                 if ($index -eq $selectedIndex) {
                     [Console]::BackgroundColor = [ConsoleColor]::DarkCyan
                     [Console]::ForegroundColor = [ConsoleColor]::White
-                    [Console]::Write("> $($Options[$index])")
+                    [Console]::Write("[ $($Options[$index]) ]")
                     [Console]::ResetColor()
                 }
                 else {
-                    [Console]::Write("  $($Options[$index])")
+                    [Console]::Write("  $($Options[$index])  ")
                 }
             }
 
+            [Console]::SetCursorPosition(0, $menuTop)
             try {
                 $key = [Console]::ReadKey($true)
             }
