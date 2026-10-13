@@ -1,6 +1,20 @@
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+function Normalize-DriveLetter {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path
+    )
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    if ($fullPath -match '^[a-z]:') {
+        return $fullPath.Substring(0, 1).ToUpperInvariant() + $fullPath.Substring(1)
+    }
+
+    return $fullPath
+}
+
 function Get-SteamLibraryPaths {
     $steamRoots = @()
     $registryLocations = @(
@@ -32,7 +46,18 @@ function Get-SteamLibraryPaths {
         }
     }
 
-    return @($libraries | Where-Object { $_ } | Sort-Object -Unique)
+    $uniqueLibraries = New-Object 'System.Collections.Generic.HashSet[string]' (
+        [System.StringComparer]::OrdinalIgnoreCase
+    )
+    $normalizedLibraries = @()
+    foreach ($library in $libraries | Where-Object { $_ }) {
+        $normalizedLibrary = Normalize-DriveLetter -Path $library
+        if ($uniqueLibraries.Add($normalizedLibrary)) {
+            $normalizedLibraries += $normalizedLibrary
+        }
+    }
+
+    return $normalizedLibraries
 }
 
 function Get-GameDirectory {
@@ -71,7 +96,7 @@ function Get-GameDirectory {
         throw "Folder not found: $providedPath"
     }
 
-    $resolvedPath = (Resolve-Path -LiteralPath $providedPath).Path
+    $resolvedPath = Normalize-DriveLetter -Path (Resolve-Path -LiteralPath $providedPath).Path
     if (Test-Path -LiteralPath (Join-Path $resolvedPath 'eldenring.exe') -PathType Leaf) {
         return $resolvedPath
     }
@@ -82,6 +107,33 @@ function Get-GameDirectory {
     }
 
     throw 'The selected folder does not contain eldenring.exe or a Game subfolder containing it.'
+}
+
+function Set-SeamlessCoopSetting {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path,
+        [Parameter(Mandatory = $true)]
+        [string] $Name,
+        [Parameter(Mandatory = $true)]
+        [string] $Value
+    )
+
+    $settingsText = [System.IO.File]::ReadAllText($Path)
+    $escapedName = [regex]::Escape($Name)
+    $pattern = "(?im)^(?<prefix>[ `t]*$escapedName[ `t]*=[ `t]*)[^\r\n]*?(?<suffix>[ `t]*)(?<ending>\r?)$"
+    $matches = [regex]::Matches($settingsText, $pattern)
+    if ($matches.Count -ne 1) {
+        throw "Expected exactly one '$Name' setting in '$Path', found $($matches.Count)."
+    }
+
+    $replacement = '$1' + $Value + '$2$3'
+    $updatedText = [regex]::Replace($settingsText, $pattern, $replacement, 1)
+    [System.IO.File]::WriteAllText(
+        $Path,
+        $updatedText,
+        [System.Text.UTF8Encoding]::new($false)
+    )
 }
 
 try {
@@ -207,10 +259,25 @@ try {
             Copy-Item -LiteralPath $settingsBackupPath -Destination $existingSettings -Force
         }
 
+        Set-SeamlessCoopSetting -Path $existingSettings -Name 'cooppassword' -Value 'crab'
+        Set-SeamlessCoopSetting -Path $existingSettings -Name 'save_file_extension' -Value 'crab'
+
         Write-Host ''
         Write-Host "Seamless Co-op $($release.tag_name) installed successfully."
+        Write-Host 'Co-op password and save file extension are both set to crab.'
         Write-Host "Start modded sessions with: $launcherPath"
         Write-Host 'Keep the game and mod versions aligned with the other players in your party.'
+
+        $launchConfirmation = Read-Host 'Launch Seamless Co-op now? [y/N]'
+        if ($launchConfirmation -match '^(y|yes)$') {
+            try {
+                Start-Process -FilePath $launcherPath -WorkingDirectory $gameDirectory -ErrorAction Stop
+                Write-Host 'Seamless Co-op launcher started.'
+            }
+            catch {
+                Write-Host "Installation succeeded, but the launcher could not be started: $($_.Exception.Message)" -ForegroundColor Red
+            }
+        }
     }
     finally {
         if (Test-Path -LiteralPath $workDirectory) {
