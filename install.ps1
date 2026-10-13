@@ -155,21 +155,14 @@ function Set-SeamlessCoopSetting {
 function Copy-BaseGameSaves {
     param(
         [Parameter(Mandatory = $true)]
-        [string] $SourceDirectory,
+        [AllowEmptyCollection()]
+        [System.IO.FileInfo[]] $SaveFiles,
         [Parameter(Mandatory = $true)]
         [string] $SaveFileName
     )
 
-    if (-not (Test-Path -LiteralPath $SourceDirectory -PathType Container)) {
-        Write-Host "No base-game save directory found at: $SourceDirectory"
-        return
-    }
-
-    $saveFiles = @(
-        Get-ChildItem -LiteralPath $SourceDirectory -Filter '*.sl2' -File -Recurse -ErrorAction Stop
-    )
     if ($saveFiles.Count -eq 0) {
-        Write-Host "No base-game .sl2 save files found under: $SourceDirectory"
+        Write-Host 'No base-game .sl2 save files need copying.'
         return
     }
 
@@ -436,18 +429,34 @@ try {
         Write-Host 'Keep the game and mod versions aligned with the other players in your party.'
 
         Write-Host ''
-        $copySavesConfirmation = Select-MenuOption `
-            -Prompt "Copy base-game saves to .sl2.$saveName files?" `
-            -Options @('Yes [default]', 'No') `
-            -DefaultIndex 0
-        if ($copySavesConfirmation -eq 0) {
-            $baseSaveDirectory = Join-Path $env:APPDATA 'EldenRing'
-            try {
-                Copy-BaseGameSaves -SourceDirectory $baseSaveDirectory -SaveFileName $saveName
+        $baseSaveDirectory = Join-Path $env:APPDATA 'EldenRing'
+        try {
+            $baseGameSaveFiles = @()
+            if (Test-Path -LiteralPath $baseSaveDirectory -PathType Container) {
+                $baseGameSaveFiles = @(
+                    Get-ChildItem `
+                        -LiteralPath $baseSaveDirectory `
+                        -Filter '*.sl2' `
+                        -File `
+                        -Recurse `
+                        -ErrorAction Stop |
+                        Where-Object {
+                            -not (Test-Path -LiteralPath "$($_.FullName).$saveName")
+                        }
+                )
             }
-            catch {
-                Write-Host "Installation succeeded, but base-game saves could not be copied: $($_.Exception.Message)" -ForegroundColor Red
+
+            $copyCount = $baseGameSaveFiles.Count
+            $copySavesConfirmation = Select-MenuOption `
+                -Prompt "Copy $copyCount base-game save(s) to .sl2.$saveName files?" `
+                -Options @('Yes [default]', 'No') `
+                -DefaultIndex 0
+            if ($copySavesConfirmation -eq 0) {
+                Copy-BaseGameSaves -SaveFiles $baseGameSaveFiles -SaveFileName $saveName
             }
+        }
+        catch {
+            Write-Host "Installation succeeded, but base-game saves could not be listed or copied: $($_.Exception.Message)" -ForegroundColor Red
         }
 
         Write-Host ''
@@ -473,6 +482,5 @@ try {
 }
 catch {
     $message = "Seamless Co-op installation failed: $($_.Exception.Message)"
-    Write-Host $message -ForegroundColor Red
-    throw $message
+    Write-Error -Message $message -ErrorAction Continue
 }
